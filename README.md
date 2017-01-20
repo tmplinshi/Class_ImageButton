@@ -85,3 +85,7 @@ The `icon` object has the following properties:
 * `y` - (optional) image's y position.
 * `w` - (optional) image width
 * `h` - (optional) image height
+
+Screenshot of **Resources\Sample2.ahk**:
+
+![Screenshot of Sample2.ahk](https://github.com/tmplinshi/Class_ImageButton/blob/master/Resources/Sample2.png)
