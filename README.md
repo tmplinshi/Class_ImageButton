@@ -80,7 +80,7 @@ Gui, Add, Button, Left vBT4 w95 h50 hwndHBT5, Save
 
 The `icon` object has the following properties:
 * `file` - The "icon" image file
-* `padding` - (optional) The image's left and right padding. Default value is 4.
+* `padding` - (optional) The image's left and right padding. Default value is 5.
 * `x` - (optional) image's x position. If omited, it uses the padding value.
 * `y` - (optional) image's y position.
 * `w` - (optional) image width
