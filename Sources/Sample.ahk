@@ -2,7 +2,7 @@
 SetBatchLines, -1
 #Include Class_ImageButton.ahk
 ; ----------------------------------------------------------------------------------------------------------------------
-Gui, DummyGUI:Add, Pic, hwndHPIC, PIC1.jpg
+Gui, DummyGUI:Add, Pic, hwndHPIC, ..\Resources\PIC1.jpg
 SendMessage, 0x0173, 0, 0, , ahk_id %HPIC% ; STM_GETIMAGE
 HPIC1 := ErrorLevel
 ; ----------------------------------------------------------------------------------------------------------------------
@@ -47,7 +47,7 @@ Gui, Add, CheckBox, xp y+0 w200 gCheck vCheckBox, Enable!
 ; Image button without caption with different pictures for states normal and hot ---------------------------------------
 Gui, Add, Button, vBT4 w200 h30 hwndHBT4
 Opt1 := [0, HPIC1]                                          ; normal image
-Opt2 := {2:"PIC2.jpg"}                                      ; hot image (object syntax)
+Opt2 := {2:"..\Resources\PIC2.jpg"}                         ; hot image (object syntax)
 If !ImageButton.Create(HBT4, Opt1, Opt2)
    MsgBox, 0, ImageButton Error Btn4, % ImageButton.LastError
 ; GuiControl, Focus, BT2
