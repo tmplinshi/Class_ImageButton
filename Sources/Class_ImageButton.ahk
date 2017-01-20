@@ -408,11 +408,11 @@ Class ImageButton {
             DllCall("Gdiplus.dll\GdipCreateBitmapFromFile", "WStr", oIcon.file, "PtrP", PBM)
 
             If !oIcon.w {
-               DllCall("Gdiplus.dll\GdipGetImageWidth", Ptr, PBM, "uint*", __w)
+               DllCall("Gdiplus.dll\GdipGetImageWidth", "Ptr", PBM, "UInt*", __w)
                oIcon.w := __w
             }
             If !oIcon.h {
-               DllCall("Gdiplus.dll\GdipGetImageHeight", Ptr, PBM, "uint*", __h)
+               DllCall("Gdiplus.dll\GdipGetImageHeight", "Ptr", PBM, "UInt*", __h)
                oIcon.h := __h
             }
 
