@@ -3,7 +3,8 @@
 ; Function:          Create images and assign them to pushbuttons.
 ; Tested with:       AHK 1.1.14.03 (A32/U32/U64)
 ; Tested on:         Win 7 (x64)
-; Change history:    1.4.00.00/2014-06-07/just me - fixed bug for button caption = "0", "000", etc.
+; Change history:             /2017-01-20/tmplinshi - added support for icon and checkbox/radio buttons
+;                    1.4.00.00/2014-06-07/just me - fixed bug for button caption = "0", "000", etc.
 ;                    1.3.00.00/2014-02-28/just me - added support for ARGB colors
 ;                    1.2.00.00/2014-02-23/just me - added borders
 ;                    1.1.00.00/2013-12-26/just me - added rounded and bicolored buttons       
@@ -196,14 +197,16 @@ Class ImageButton {
          Return This.SetError("Invalid parameter HWND!")
       ; ----------------------------------------------------------------------------------------------------------------
       ; Check Options
-      If !(IsObject(Options)) || (Options.MinIndex() <> 1) || (Options.MaxIndex() > This.MaxOptions)
+      If !(IsObject(Options)) || (Options.MinIndex() <> 1) ; || (Options.MaxIndex() > This.MaxOptions)
          Return This.SetError("Invalid parameter Options!")
       ; ----------------------------------------------------------------------------------------------------------------
       ; Get and check control's class and styles
       WinGetClass, BtnClass, ahk_id %HWND%
       ControlGet, BtnStyle, Style, , , ahk_id %HWND%
-      If (BtnClass != "Button") || ((BtnStyle & 0xF ^ BS_GROUPBOX) = 0) || ((BtnStyle & RCBUTTONS) > 1)
+      If (BtnClass != "Button") || ((BtnStyle & 0xF ^ BS_GROUPBOX) = 0)
          Return This.SetError("The control must be a pushbutton!")
+      If ((BtnStyle & RCBUTTONS) > 1)
+         GuiControl, +0x1000, %HWND% ; BS_PUSHLIKE = 0x1000
       ; ----------------------------------------------------------------------------------------------------------------
       ; Load GdiPlus
       If !This.GdiplusStartup()
@@ -253,12 +256,12 @@ Class ImageButton {
          && (FileExist(Option.2) || (DllCall("Gdi32.dll\GetObjectType", "Ptr", Option.2, "UInt") = OBJ_BITMAP))
             Image := Option.2
          Else {
-            If !(Option.2 + 0) && !This.HTML.HasKey(Option.2)
+            If !(Option.2 + 0) && !This.HTML.HasKey(Option.2) && !Option.Icon
                Return This.SetError("Invalid value for StartColor in Options[" . Index . "]!")
             BkgColor1 := This.GetARGB(Option.2)
             If (Option.3 = "")
                Option.3 := Option.2
-            If !(Option.3 + 0) && !This.HTML.HasKey(Option.3)
+            If !(Option.3 + 0) && !This.HTML.HasKey(Option.3) && !Option.Icon
                Return This.SetError("Invalid value for TargetColor in Options[" . Index . "]!")
             BkgColor2 := This.GetARGB(Option.3)
          }
@@ -400,6 +403,33 @@ Class ImageButton {
             ; Free the bitmap
             DllCall("Gdiplus.dll\GdipDisposeImage", "Ptr", PBM)
          }
+
+         if (oIcon := Option.Icon) {
+            DllCall("Gdiplus.dll\GdipCreateBitmapFromFile", "WStr", oIcon.file, "PtrP", PBM)
+
+            If !oIcon.w {
+               DllCall("Gdiplus.dll\GdipGetImageWidth", Ptr, PBM, "uint*", __w)
+               oIcon.w := __w
+            }
+            If !oIcon.h {
+               DllCall("Gdiplus.dll\GdipGetImageHeight", Ptr, PBM, "uint*", __h)
+               oIcon.h := __h
+            }
+
+            if !oIcon.HasKey("padding")
+               oIcon.padding := 4
+
+            if !oIcon.HasKey("y")
+               oIcon.y := (BtnH - oIcon.h)//2
+
+            icon_x := oIcon.HasKey("x") ? oIcon.x : oIcon.padding
+
+            DllCall("Gdiplus.dll\GdipDrawImageRectI", "Ptr", PGRAPHICS, "Ptr", PBM, "Int", icon_x, "Int", oIcon.y
+                  , "Int", oIcon.w, "Int", oIcon.h)
+            ; Free the bitmap
+            DllCall("Gdiplus.dll\GdipDisposeImage", "Ptr", PBM)
+         }
+
          ; -------------------------------------------------------------------------------------------------------------
          ; Draw the caption
          If (BtnCaption <> "") {
@@ -422,8 +452,15 @@ Class ImageButton {
             DllCall("Gdiplus.dll\GdipSetTextRenderingHint", "Ptr", PGRAPHICS, "Int", 0)
             ; Set the text's rectangle
             VarSetCapacity(RECT, 16, 0)
-            NumPut(BtnW, RECT,  8, "Float")
-            NumPut(BtnH, RECT, 12, "Float")
+            if !oIcon.x || (HALIGN = SA_CENTER) {
+               NumPut( _left := oIcon.w + oIcon.padding*2, RECT,  0, "Float")
+               NumPut(BtnW - _left                       , RECT,  8, "Float")
+               NumPut(BtnH          , RECT, 12, "Float")
+            } else {
+               NumPut(BtnW, RECT,  8, "Float")
+               NumPut(BtnH, RECT, 12, "Float")
+            }
+            
             ; Draw the text
             DllCall("Gdiplus.dll\GdipDrawString", "Ptr", PGRAPHICS, "WStr", BtnCaption, "Int", -1
                   , "Ptr", PFONT, "Ptr", &RECT, "Ptr", HFORMAT, "Ptr", PBRUSH)
