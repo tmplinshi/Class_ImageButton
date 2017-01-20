@@ -68,7 +68,7 @@ The class creates an image list and assigns it to the pushbutton control. Button
 
 3. That's all!
 
-## Extended features (by tmplinshi)
+## Extended features
 You can add an `icon` object to each option. Example code:
 ```AutoHotkey
 Gui, Add, Button, Left vBT4 w95 h50 hwndHBT5, Save
