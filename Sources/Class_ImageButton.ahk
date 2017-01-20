@@ -1,4 +1,4 @@
-﻿; ======================================================================================================================
+; ======================================================================================================================
 ; Namespace:         ImageButton
 ; Function:          Create images and assign them to pushbuttons.
 ; Tested with:       AHK 1.1.14.03 (A32/U32/U64)
@@ -452,11 +452,17 @@ Class ImageButton {
             DllCall("Gdiplus.dll\GdipSetTextRenderingHint", "Ptr", PGRAPHICS, "Int", 0)
             ; Set the text's rectangle
             VarSetCapacity(RECT, 16, 0)
-            if !oIcon.x || (HALIGN = SA_CENTER) {
-               NumPut( _left := oIcon.w + oIcon.padding*2, RECT,  0, "Float")
-               NumPut(BtnW - _left                       , RECT,  8, "Float")
-               NumPut(BtnH          , RECT, 12, "Float")
-            } else {
+
+            If oIcon {
+               If !oIcon.x || (HALIGN = SA_CENTER) {
+                  NumPut( _left := oIcon.w + oIcon.padding*2, RECT,  0, "Float")
+                  NumPut(BtnW - _left                       , RECT,  8, "Float")
+                  NumPut(BtnH          , RECT, 12, "Float")
+               } Else {
+                  NumPut(BtnW, RECT,  8, "Float")
+                  NumPut(BtnH, RECT, 12, "Float")
+               }
+            } Else {
                NumPut(BtnW, RECT,  8, "Float")
                NumPut(BtnH, RECT, 12, "Float")
             }
