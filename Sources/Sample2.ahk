@@ -2,6 +2,9 @@
 #NoEnv
 SetBatchLines, -1
 #Include Class_ImageButton.ahk
+
+DisableFadeEffect()
+
 ; ----------------------------------------------------------------------------------------------------------------------
 Gui, Font, s13
 Gui, Margin, 60
@@ -76,3 +79,11 @@ Return
 GuiClose:
 GuiEscape:
 ExitApp
+
+DisableFadeEffect() {
+	; SPI_SETCLIENTAREAANIMATION = 0x1043
+	DllCall("SystemParametersInfo", "UInt", 0x1043, "UInt", 0, "UInt", 0, "UInt", 0)
+	Progress, 10:P100 Hide
+	Progress, 10:Off
+	DllCall("SystemParametersInfo", "UInt", 0x1043, "UInt", 0, "UInt", 1, "UInt", 0)
+}
