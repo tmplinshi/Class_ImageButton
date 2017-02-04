@@ -3,7 +3,8 @@
 ; Function:          Create images and assign them to pushbuttons.
 ; Tested with:       AHK 1.1.14.03 (A32/U32/U64)
 ; Tested on:         Win 7 (x64)
-; Change history:             /2017-01-21/tmplinshi - added support for icon and checkbox/radio buttons
+; Change history:             /2017-02-05/tmplinshi - added DisableFadeEffect(). Thanks to Klark92.
+;                             /2017-01-21/tmplinshi - added support for icon and checkbox/radio buttons
 ;                    1.4.00.00/2014-06-07/just me - fixed bug for button caption = "0", "000", etc.
 ;                    1.3.00.00/2014-02-28/just me - added support for ARGB colors
 ;                    1.2.00.00/2014-02-23/just me - added borders
@@ -526,5 +527,18 @@ Class ImageButton {
          Return False
       This.DefTxtColor := (This.HTML.HasKey(TxtColor) ? This.HTML[TxtColor] : TxtColor) & 0xFFFFFF
       Return True
+   }
+   ; ===================================================================================================================
+   DisableFadeEffect() {
+      ; SPI_GETCLIENTAREAANIMATION = 0x1042
+      DllCall("SystemParametersInfo", "UInt", 0x1042, "UInt", 0, "UInt*", isEnabled, "UInt", 0)
+
+      if isEnabled {
+         ; SPI_SETCLIENTAREAANIMATION = 0x1043
+         DllCall("SystemParametersInfo", "UInt", 0x1043, "UInt", 0, "UInt", 0, "UInt", 0)
+         Progress, 10:P100 Hide
+         Progress, 10:Off
+         DllCall("SystemParametersInfo", "UInt", 0x1043, "UInt", 0, "UInt", 1, "UInt", 0)
+      }
    }
 }
