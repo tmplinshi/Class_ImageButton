@@ -78,8 +78,19 @@ Gui, Add, Button, Left vBT4 w95 h50 hwndHBT5, Save
 	ImageButton.Create(HBT5, Opt1, Opt2, Opt3)
 ```
 
+Also you can load a bmp-file from itself executable, when it was compilled with Ahk2Exe:
+```AutoHotkey
+Gui, Add, Checkbox, hwndHCB, Install database
+	Opt1 := { 1:0, icon:{hmodule: 0, file: "checkbox_unchecked.bmp", padding: 4} }
+	Opt2 := { 1:0, icon:{hmodule: 0, file: "checkbox_unchecked.bmp", padding: 4} }
+	Opt3 := { 1:0, icon:{hmodule: 0, file: "checkbox_checked.bmp"  , padding: 4} }
+	ImageButton.Create(HCB, Opt1, Opt2, Opt3)
+```
+In this case `file` is the resource name.
+
 The `icon` object has the following properties:
 * `file` - The "icon" image file
+* `hmodule` - Handle to the module with a bitmap resource. Pass 0 to load bitmap from calling process.
 * `padding` - (optional) The image's left and right padding. Default value is 5.
 * `x` - (optional) image's x position. If omited, it uses the padding value.
 * `y` - (optional) image's y position.
