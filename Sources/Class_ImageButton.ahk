@@ -534,7 +534,7 @@ Class ImageButton {
    ; ===================================================================================================================
    ; Set the default text color
    SetTxtColor(TxtColor) {
-      ; TxtColor     -  RGB integer value (0xRRGGBB), HTML color name ("Red") or "none" word to disable text drawing.
+      ; TxtColor     -  RGB integer value (0xRRGGBB), HTML color name ("Red") or "none" word to disable text redrawing using GDI+
       If (TxtColor = "none") {
          This.DefTxtColor := -1
          Return True
