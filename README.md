@@ -51,7 +51,12 @@ The class creates an image list and assigns it to the pushbutton control. Button
 		4     TextColor   optional, if omitted, the default text color will be used for Option[1],
 						  higher indices will inherit the color of Option[1]:
 						  -  ARGB integer value (0xAARRGGBB) or HTML color name ("Red").
-							 Default: 0x000000 (black)
+						  -  Pass value "none" to force Class_ImageButton to Not redraw
+						     button caption with GDI+. Instead of it the button text will be stay
+						     drawn by the system using black color. It is useful when you need
+						     a black button caption and if you do not like how GDI+ library
+						     applies antialiasing to your button text.
+						  -  Default: 0x000000 (black)
 		5     Rounded     optional:
 						  -  Radius of the rounded corners in pixel; the letters 'H' and 'W' may be
 						     specified also to use the half of the button's height or width respectively.

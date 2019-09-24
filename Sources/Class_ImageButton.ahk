@@ -270,6 +270,8 @@ Class ImageButton {
          ; TextColor
          If (Option.4 = "")
             Option.4 := This.DefTxtColor
+         Else If Option.4 = "none"
+            Option.4 := -1
          If !(Option.4 + 0) && !This.HTML.HasKey(Option.4)
             Return This.SetError("Invalid value for TxtColor in Options[" . Index . "]!")
          TxtColor := This.GetARGB(Option.4)
@@ -441,7 +443,11 @@ Class ImageButton {
 
          ; -------------------------------------------------------------------------------------------------------------
          ; Draw the caption
-         If (BtnCaption <> "") {
+         If (BtnCaption <> "" && TxtColor != -1) {
+            ; Hide buttons's caption
+            ControlSetText, , , ahk_id %HWND%
+            Control, Style, +%BS_BITMAP%, , ahk_id %HWND%
+
             ; Create a StringFormat object
             DllCall("Gdiplus.dll\GdipStringFormatGetGenericTypographic", "PtrP", HFORMAT:=0)
             ; Text color
@@ -479,6 +485,8 @@ Class ImageButton {
             ; Draw the text
             DllCall("Gdiplus.dll\GdipDrawString", "Ptr", PGRAPHICS, "WStr", BtnCaption, "Int", -1
                   , "Ptr", PFONT, "Ptr", &RECT, "Ptr", HFORMAT, "Ptr", PBRUSH)
+          
+            DllCall("Gdiplus.dll\GdipDeleteStringFormat", "Ptr", HFORMAT)
          }
          ; -------------------------------------------------------------------------------------------------------------
          ; Create a HBITMAP handle from the bitmap and add it to the array
@@ -487,7 +495,6 @@ Class ImageButton {
          ; Free resources
          DllCall("Gdiplus.dll\GdipDisposeImage", "Ptr", PBITMAP)
          DllCall("Gdiplus.dll\GdipDeleteBrush", "Ptr", PBRUSH)
-         DllCall("Gdiplus.dll\GdipDeleteStringFormat", "Ptr", HFORMAT)
          DllCall("Gdiplus.dll\GdipDeleteGraphics", "Ptr", PGRAPHICS)
          ; Add the bitmap to the array
       }
@@ -505,9 +512,6 @@ Class ImageButton {
       VarSetCapacity(BIL, 20 + A_PtrSize, 0)
       NumPut(HIL, BIL, 0, "Ptr")
       Numput(BUTTON_IMAGELIST_ALIGN_CENTER, BIL, A_PtrSize + 16, "UInt")
-      ; Hide buttons's caption
-      ControlSetText, , , ahk_id %HWND%
-      Control, Style, +%BS_BITMAP%, , ahk_id %HWND%
       ; Assign the ImageList to the button
       SendMessage, %BCM_SETIMAGELIST%, 0, 0, , ahk_id %HWND%
       SendMessage, %BCM_SETIMAGELIST%, 0, % &BIL, , ahk_id %HWND%
@@ -530,7 +534,11 @@ Class ImageButton {
    ; ===================================================================================================================
    ; Set the default text color
    SetTxtColor(TxtColor) {
-      ; TxtColor     -  RGB integer value (0xRRGGBB) or HTML color name ("Red").
+      ; TxtColor     -  RGB integer value (0xRRGGBB), HTML color name ("Red") or "none" word to disable text drawing.
+      If (TxtColor = "none") {
+         This.DefTxtColor := -1
+         Return True
+      }
       If !(TxtColor + 0) && !This.HTML.HasKey(TxtColor)
          Return False
       This.DefTxtColor := (This.HTML.HasKey(TxtColor) ? This.HTML[TxtColor] : TxtColor) & 0xFFFFFF
