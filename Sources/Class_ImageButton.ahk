@@ -3,7 +3,8 @@
 ; Function:          Create images and assign them to pushbuttons.
 ; Tested with:       AHK 1.1.14.03 (A32/U32/U64)
 ; Tested on:         Win 7 (x64)
-; Change history:             /2017-02-05/tmplinshi - added DisableFadeEffect(). Thanks to Klark92.
+; Change history:             /2019-09-17/argimko - added ability to load bitmap from resource
+;                             /2017-02-05/tmplinshi - added DisableFadeEffect(). Thanks to Klark92.
 ;                             /2017-01-21/tmplinshi - added support for icon and checkbox/radio buttons
 ;                    1.4.00.00/2014-06-07/just me - fixed bug for button caption = "0", "000", etc.
 ;                    1.3.00.00/2014-02-28/just me - added support for ARGB colors
@@ -20,11 +21,11 @@
 ;        The index of each option object determines the corresponding button state on which the bitmap will be shown.
 ;        MSDN defines 6 states (http://msdn.microsoft.com/en-us/windows/bb775975):
 ;           PBS_NORMAL    = 1
-;	         PBS_HOT       = 2
-;	         PBS_PRESSED   = 3
-;	         PBS_DISABLED  = 4
-;	         PBS_DEFAULTED = 5
-;	         PBS_STYLUSHOT = 6 <- used only on tablet computers (that's false for Windows Vista and 7, see below)
+;           PBS_HOT       = 2
+;           PBS_PRESSED   = 3
+;           PBS_DISABLED  = 4
+;           PBS_DEFAULTED = 5
+;           PBS_STYLUSHOT = 6 <- used only on tablet computers (that's false for Windows Vista and 7, see below)
 ;        If you don't want the button to be 'animated' on themed GUIs, just pass one option object with index 1.
 ;        On Windows Vista and 7 themed bottons are 'animated' using the images of states 5 and 6 after clicked.
 ;        ---------------------------------------------------------------------------------------------------------------
@@ -111,7 +112,7 @@ Class ImageButton {
       If (This.GDIPDll := DllCall("Kernel32.dll\LoadLibrary", "Str", "Gdiplus.dll", "Ptr")) {
          VarSetCapacity(SI, 24, 0)
          Numput(1, SI, 0, "Int")
-         If !DllCall("Gdiplus.dll\GdiplusStartup", "PtrP", GDIPToken, "Ptr", &SI, "Ptr", 0)
+         If !DllCall("Gdiplus.dll\GdiplusStartup", "PtrP", GDIPToken:=0, "Ptr", &SI, "Ptr", 0)
             This.GDIPToken := GDIPToken
          Else
             This.GdiplusShutdown()
@@ -218,7 +219,7 @@ Class ImageButton {
       HFONT := DllCall("User32.dll\SendMessage", "Ptr", HWND, "UInt", WM_GETFONT, "Ptr", 0, "Ptr", 0, "Ptr")
       DC := DllCall("User32.dll\GetDC", "Ptr", HWND, "Ptr")
       DllCall("Gdi32.dll\SelectObject", "Ptr", DC, "Ptr", HFONT)
-      DllCall("Gdiplus.dll\GdipCreateFontFromDC", "Ptr", DC, "PtrP", PFONT)
+      DllCall("Gdiplus.dll\GdipCreateFontFromDC", "Ptr", DC, "PtrP", PFONT:=0)
       DllCall("User32.dll\ReleaseDC", "Ptr", HWND, "Ptr", DC)
       If !(PFONT)
          Return This.SetError("Couldn't get button's font!")
@@ -269,6 +270,8 @@ Class ImageButton {
          ; TextColor
          If (Option.4 = "")
             Option.4 := This.DefTxtColor
+         Else If Option.4 = "none"
+            Option.4 := -1
          If !(Option.4 + 0) && !This.HTML.HasKey(Option.4)
             Return This.SetError("Invalid value for TxtColor in Options[" . Index . "]!")
          TxtColor := This.GetARGB(Option.4)
@@ -298,9 +301,9 @@ Class ImageButton {
          ; -------------------------------------------------------------------------------------------------------------
          ; Create a GDI+ bitmap
          DllCall("Gdiplus.dll\GdipCreateBitmapFromScan0", "Int", BtnW, "Int", BtnH, "Int", 0
-               , "UInt", 0x26200A, "Ptr", 0, "PtrP", PBITMAP)
+               , "UInt", 0x26200A, "Ptr", 0, "PtrP", PBITMAP:=0)
          ; Get the pointer to its graphics
-         DllCall("Gdiplus.dll\GdipGetImageGraphicsContext", "Ptr", PBITMAP, "PtrP", PGRAPHICS)
+         DllCall("Gdiplus.dll\GdipGetImageGraphicsContext", "Ptr", PBITMAP, "PtrP", PGRAPHICS:=0)
          ; Quality settings
          DllCall("Gdiplus.dll\GdipSetSmoothingMode", "Ptr", PGRAPHICS, "UInt", 4)
          DllCall("Gdiplus.dll\GdipSetInterpolationMode", "Ptr", PGRAPHICS, "Int", 7)
@@ -313,7 +316,7 @@ Class ImageButton {
          If (Image = "") { ; Create a BitMap based on the specified colors
             PathX := PathY := 0, PathW := BtnW, PathH := BtnH
             ; Create a GraphicsPath
-            DllCall("Gdiplus.dll\GdipCreatePath", "UInt", 0, "PtrP", PPATH)
+            DllCall("Gdiplus.dll\GdipCreatePath", "UInt", 0, "PtrP", PPATH:=0)
             If (Rounded < 1) ; the path is a rectangular rectangle
                This.PathAddRectangle(PPATH, PathX, PathY, PathW, PathH)
             Else ; the path is a rounded rectangle
@@ -342,7 +345,7 @@ Class ImageButton {
             PathH -= PathY
             If (Mode = 0) { ; the background is unicolored
                ; Create a SolidBrush
-               DllCall("Gdiplus.dll\GdipCreateSolidFill", "UInt", BkgColor1, "PtrP", PBRUSH)
+               DllCall("Gdiplus.dll\GdipCreateSolidFill", "UInt", BkgColor1, "PtrP", PBRUSH:=0)
                ; Fill the path
                DllCall("Gdiplus.dll\GdipFillPath", "Ptr", PGRAPHICS, "Ptr", PBRUSH, "Ptr", PPATH)
             }
@@ -395,9 +398,9 @@ Class ImageButton {
             DllCall("Gdiplus.dll\GdipDeletePath", "Ptr", PPATH)
          } Else { ; Create a bitmap from HBITMAP or file
             If (Image + 0)
-               DllCall("Gdiplus.dll\GdipCreateBitmapFromHBITMAP", "Ptr", Image, "Ptr", 0, "PtrP", PBM)
+               DllCall("Gdiplus.dll\GdipCreateBitmapFromHBITMAP", "Ptr", Image, "Ptr", 0, "PtrP", PBM:=0)
             Else
-               DllCall("Gdiplus.dll\GdipCreateBitmapFromFile", "WStr", Image, "PtrP", PBM)
+               DllCall("Gdiplus.dll\GdipCreateBitmapFromFile", "WStr", Image, "PtrP", PBM:=0)
             ; Draw the bitmap
             DllCall("Gdiplus.dll\GdipDrawImageRectI", "Ptr", PGRAPHICS, "Ptr", PBM, "Int", 0, "Int", 0
                   , "Int", BtnW, "Int", BtnH)
@@ -406,14 +409,21 @@ Class ImageButton {
          }
 
          if (oIcon := Option.Icon) {
-            DllCall("Gdiplus.dll\GdipCreateBitmapFromFile", "WStr", oIcon.file, "PtrP", PBM)
+            If (oIcon.HasKey("hmodule")) {
+               If !oIcon.hmodule
+                  oIcon.hmodule := DllCall("GetModuleHandle", Ptr, 0)
+
+               DllCall("Gdiplus.dll\GdipCreateBitmapFromResource", "Ptr", oIcon.hmodule, "WStr", oIcon.file, "PtrP", PBM:=0)
+            }
+            Else
+               DllCall("Gdiplus.dll\GdipCreateBitmapFromFile", "WStr", oIcon.file, "PtrP", PBM:=0)
 
             If !oIcon.w {
-               DllCall("Gdiplus.dll\GdipGetImageWidth", "Ptr", PBM, "UInt*", __w)
+               DllCall("Gdiplus.dll\GdipGetImageWidth", "Ptr", PBM, "UInt*", __w:=0)
                oIcon.w := __w
             }
             If !oIcon.h {
-               DllCall("Gdiplus.dll\GdipGetImageHeight", "Ptr", PBM, "UInt*", __h)
+               DllCall("Gdiplus.dll\GdipGetImageHeight", "Ptr", PBM, "UInt*", __h:=0)
                oIcon.h := __h
             }
 
@@ -433,9 +443,13 @@ Class ImageButton {
 
          ; -------------------------------------------------------------------------------------------------------------
          ; Draw the caption
-         If (BtnCaption <> "") {
+         If (BtnCaption <> "" && TxtColor != -1) {
+            ; Hide buttons's caption
+            ControlSetText, , , ahk_id %HWND%
+            Control, Style, +%BS_BITMAP%, , ahk_id %HWND%
+
             ; Create a StringFormat object
-            DllCall("Gdiplus.dll\GdipStringFormatGetGenericTypographic", "PtrP", HFORMAT)
+            DllCall("Gdiplus.dll\GdipStringFormatGetGenericTypographic", "PtrP", HFORMAT:=0)
             ; Text color
             DllCall("Gdiplus.dll\GdipCreateSolidFill", "UInt", TxtColor, "PtrP", PBRUSH)
             ; Horizontal alignment
@@ -471,15 +485,16 @@ Class ImageButton {
             ; Draw the text
             DllCall("Gdiplus.dll\GdipDrawString", "Ptr", PGRAPHICS, "WStr", BtnCaption, "Int", -1
                   , "Ptr", PFONT, "Ptr", &RECT, "Ptr", HFORMAT, "Ptr", PBRUSH)
+          
+            DllCall("Gdiplus.dll\GdipDeleteStringFormat", "Ptr", HFORMAT)
          }
          ; -------------------------------------------------------------------------------------------------------------
          ; Create a HBITMAP handle from the bitmap and add it to the array
-         DllCall("Gdiplus.dll\GdipCreateHBITMAPFromBitmap", "Ptr", PBITMAP, "PtrP", HBITMAP, "UInt", 0X00FFFFFF)
+         DllCall("Gdiplus.dll\GdipCreateHBITMAPFromBitmap", "Ptr", PBITMAP, "PtrP", HBITMAP:=0, "UInt", 0X00FFFFFF)
          This.BitMaps[Index] := HBITMAP
          ; Free resources
          DllCall("Gdiplus.dll\GdipDisposeImage", "Ptr", PBITMAP)
          DllCall("Gdiplus.dll\GdipDeleteBrush", "Ptr", PBRUSH)
-         DllCall("Gdiplus.dll\GdipDeleteStringFormat", "Ptr", HFORMAT)
          DllCall("Gdiplus.dll\GdipDeleteGraphics", "Ptr", PGRAPHICS)
          ; Add the bitmap to the array
       }
@@ -497,9 +512,6 @@ Class ImageButton {
       VarSetCapacity(BIL, 20 + A_PtrSize, 0)
       NumPut(HIL, BIL, 0, "Ptr")
       Numput(BUTTON_IMAGELIST_ALIGN_CENTER, BIL, A_PtrSize + 16, "UInt")
-      ; Hide buttons's caption
-      ControlSetText, , , ahk_id %HWND%
-      Control, Style, +%BS_BITMAP%, , ahk_id %HWND%
       ; Assign the ImageList to the button
       SendMessage, %BCM_SETIMAGELIST%, 0, 0, , ahk_id %HWND%
       SendMessage, %BCM_SETIMAGELIST%, 0, % &BIL, , ahk_id %HWND%
@@ -522,7 +534,11 @@ Class ImageButton {
    ; ===================================================================================================================
    ; Set the default text color
    SetTxtColor(TxtColor) {
-      ; TxtColor     -  RGB integer value (0xRRGGBB) or HTML color name ("Red").
+      ; TxtColor     -  RGB integer value (0xRRGGBB), HTML color name ("Red") or "none" word to disable text redrawing using GDI+
+      If (TxtColor = "none") {
+         This.DefTxtColor := -1
+         Return True
+      }
       If !(TxtColor + 0) && !This.HTML.HasKey(TxtColor)
          Return False
       This.DefTxtColor := (This.HTML.HasKey(TxtColor) ? This.HTML[TxtColor] : TxtColor) & 0xFFFFFF
@@ -531,7 +547,7 @@ Class ImageButton {
    ; ===================================================================================================================
    DisableFadeEffect() {
       ; SPI_GETCLIENTAREAANIMATION = 0x1042
-      DllCall("SystemParametersInfo", "UInt", 0x1042, "UInt", 0, "UInt*", isEnabled, "UInt", 0)
+      DllCall("SystemParametersInfo", "UInt", 0x1042, "UInt", 0, "UInt*", isEnabled:=0, "UInt", 0)
 
       if isEnabled {
          ; SPI_SETCLIENTAREAANIMATION = 0x1043
